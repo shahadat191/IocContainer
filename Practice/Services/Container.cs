@@ -41,6 +41,18 @@ namespace Practice.Services
             Register(typeof(T), createInstance, instanceName);
         }
 
+        private object Create(Type type)
+        {
+            //Find a default constructor using reflection
+            var defaultConstructor = type.GetConstructors()[0];
+            //Verify if the default constructor requires params
+            var defaultParams = defaultConstructor.GetParameters();
+            //Instantiate all constructor parameters using recursion
+            var parameters = defaultParams.Select(param => Create(param.ParameterType)).ToArray();
+            return defaultConstructor.Invoke(parameters);
+        }
+
+
         public void Register(Type from, Type to, string instanceName = null)
         {
             if (to == null)
@@ -49,7 +61,8 @@ namespace Practice.Services
             {
                 throw new InvalidOperationException($"Error trying to register from {from.FullName} to {to.FullName}");
             }
-            Func<object> createInstanceDelegate = () => Activator.CreateInstance(to);
+            Func<object> createInstanceDelegate = () => Create(to);
+            //Func<object> createInstanceDelegate = () => Activator.CreateInstance(to);
             Register(from, createInstanceDelegate, instanceName);
         }
         public void Register<TFrom, TTo>(string instaceName = null) where TTo : TFrom
